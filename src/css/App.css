@@ -8,6 +8,7 @@
   justify-content: center;
   filter: blur(50%);
   font-family: "Monoton", cursive;
+  background-color: black;
 }
 
 img {
