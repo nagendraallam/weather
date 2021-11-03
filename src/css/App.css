@@ -6,13 +6,12 @@
   flex-direction: column;
   text-align: center;
   justify-content: center;
-  filter: blur(50%);
-  font-family: "Monoton", cursive;
+  box-shadow: inset 0 0 100vh #000;
+  font-family: "Press Start 2P", cursive;
   background-color: black;
 }
 
 img {
-  margin-top: 10vh;
   width: 5vw;
   align-self: center;
 }
