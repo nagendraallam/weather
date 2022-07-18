@@ -1,87 +1,147 @@
 import axios from "axios";
-import "./css/App.css";
 import { useEffect, useState } from "react";
-import sun from "./icons/sun.png";
+import SearchBox from "./components/SearchBox";
+import WeatherView from "./components/WeatherView";
+import { addDays, days, getImg, months, returnTime } from "./helpers";
+import { returnWeatherData } from "./services";
 
 function App() {
-  const [data, setData] = useState({});
-  const [aqiData, setAqi] = useState({});
+  const date = new Date();
+
+  const month = months[date.getMonth()];
+  const day = days[new Date().getDay() - 1];
+
+  const [weather, setWeather] = useState();
+  const [forecast, setForecast] = useState();
+
+  const [city, setCity] = useState("");
+
+  const [notfound, setNotfound] = useState(true);
+
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      axios
-        .get(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${process.env.REACT_APP_APIKEY}&units=metric`
-        )
-        .then((res) => {
-          console.log(res.data);
-          setData({
-            ...data,
-            description: res.data.weather[0].description,
-            weather: res.data.weather[0].main,
-            temperature: res.data.main.temp,
-            city: res.data.name,
-            country: res.data.sys.country,
-            icon: res.data.weather[0].icon,
-            id: String(res.data.weather[0].id),
-            color: returnColor(String(res.data.weather[0].id)),
-          });
-        });
-      axios
-        .get(
-          `http://api.openweathermap.org/data/2.5/air_pollution?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${process.env.REACT_APP_APIKEY}`
-        )
-        .then((res) => {
-          console.log(res.data.list[0].components);
-          setAqi({
-            polution: res.data.list[0].main.aqi,
-            components: res.data.list[0].components,
-          });
-        });
+    axios.get("https://ipapi.co/json/").then((response) => {
+      setCity(response.data.city);
     });
   }, []);
 
-  function returnColor(id) {
-    if (id.startsWith("2") || id.startsWith("3") || id.startsWith("5")) {
-      return "#8CA1A5";
-    } else if (id.startsWith("6")) {
-      return "#B5DEFF";
-    } else if (id.startsWith("7")) { 
-      return "#F7D59C";
-    } else if (id.startsWith("8")) {
-      return "#B5DEFF";
+  useEffect(() => {
+    if (city !== "") {
+      returnWeatherData("city", { city: city })
+        .then((res) => {
+          setWeather({
+            ...res.data.main,
+            ...res.data.weather,
+            country: res.data.sys.country,
+          });
+        })
+        .catch((err) => {
+          setNotfound(true);
+          setCity("NOT FOUND!");
+        });
+
+      returnWeatherData("cityforcast", { city: city }).then((res) => {
+        let args = returnTime(date.getHours(), 0, 0);
+        setForecast(() => {
+          let obj = [];
+          for (let i = 1; i <= 5; i++) {
+            obj = [
+              ...obj,
+              {
+                temp: res.data.list[args.n * i].main.temp,
+                code: res.data.list[args.n * i].weather[0].id,
+              },
+            ];
+          }
+          return obj;
+        });
+        setNotfound(false);
+      });
     }
 
-    return "black";
+    // eslint-disable-next-line
+  }, [city]);
+
+  function changeCity(name) {
+    setCity(name);
+    setShowSearch(false);
   }
 
   return (
-    <div className="App" style={{ backgroundColor: data.color }}>
-      <h1>
-        {data.city ? data.city + ", " + data.country : "Finding location"}
-      </h1>
-      <img src={`http://openweathermap.org/img/wn/${data.icon}@2x.png`} />
-      <h2>
-        {data.temperature
-          ? data.temperature + "°C"
-          : " Getting temperature"}
-      </h2>
-      <h2>{data.weather ? data.description : ""}</h2>
-      {/* <h2>
-        {aqiData.polution ? aqiData.polution : "getting pollution status"}
-      </h2>
-      <ul>
-        {aqiData.components
-          ? Object.keys(aqiData.components).map((key, value) => {
-              return (
-                <li key={key}>
-                  {key} : {aqiData.components[key]}
-                </li>
-              );
-            })
-          : "Getting components"}
-      </ul> */}
-    </div>
+    <>
+      {" "}
+      {!notfound ? (
+        <div className="w-screen h-screen flex flex-row items-center ml-[5vw]">
+          {showSearch && (
+            <SearchBox
+              findCity={changeCity}
+              close={() => {
+                setShowSearch(false);
+              }}
+            />
+          )}
+          <div className="flex flex-col w-[60vw]">
+            <h3 className="text-4xl mb-[2vh]">{day + " " + date.getDate()}</h3>{" "}
+            <h3 className="text-4xl mb-[2vh]">
+              {month.toUpperCase()} | {city}, {weather && weather.country}
+            </h3>
+            <div className="flex flex-row mb-[2vh]">
+              <h1 className="text-[10vw]">
+                {weather && Math.ceil(weather.temp)}°
+              </h1>
+              {weather && (
+                <img
+                  alt="weather icon"
+                  className="w-[10vw] h-[10vw] ml-10 mt-10"
+                  src={`/assets/${getImg(weather[(0)["id"]])}.png`}
+                />
+              )}
+            </div>
+            <div className="flex flex-row justify-evenly mt-[10vh]">
+              {forecast &&
+                forecast.map((data, index) => {
+                  return (
+                    <WeatherView
+                      key={index}
+                      day={days[addDays(index + 1).getDay()]}
+                      icon={getImg([data.code])}
+                      temp={data.temp + "°"}
+                    />
+                  );
+                })}
+            </div>
+            <h2
+              className="text-center mt-10 underline text-cyan-900 cursor-pointer"
+              onClick={(e) => {
+                //show search box
+                setShowSearch(true);
+              }}
+            >
+              find weather of a different region?
+            </h2>
+          </div>
+          )
+          <div className="flex flex-col w-[40vw] h-screen bg-blue-500">
+            <img
+              className="h-screen w-[40vw] object-cover"
+              alt="city scenery"
+              src={`https://source.unsplash.com/random/?${city},scenery`}
+            />
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h1>unable to find the city, Please try again</h1>
+          <SearchBox
+            findCity={changeCity}
+            close={() => {
+              setShowSearch(false);
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
