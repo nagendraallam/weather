@@ -11,6 +11,9 @@ function App() {
   const month = months[date.getMonth()];
   const day = days[new Date().getDay() - 1];
 
+  const [message, setMessage] = useState("locating your city...");
+  const [findSelf, setFindSelf] = useState(false);
+
   const [weather, setWeather] = useState();
   const [forecast, setForecast] = useState();
 
@@ -38,6 +41,7 @@ function App() {
         })
         .catch((err) => {
           setNotfound(true);
+          setMessage("City not found, Try again!");
           setCity("NOT FOUND!");
         });
 
@@ -131,14 +135,24 @@ function App() {
           </div>
         </div>
       ) : (
-        <div>
-          <h1>unable to find the city, Please try again</h1>
-          <SearchBox
-            findCity={changeCity}
-            close={() => {
-              setShowSearch(false);
+        <div className="flex justify-center items-center flex-col col h-screen">
+          <h1 className="text-2xl">{message}</h1>
+          <button
+            className="m-4 border-2 border-black p-4 rounded-lg"
+            onClick={() => {
+              setFindSelf(!findSelf);
             }}
-          />
+          >
+            Search?
+          </button>
+          {findSelf && (
+            <SearchBox
+              findCity={changeCity}
+              close={() => {
+                setFindSelf(false);
+              }}
+            />
+          )}
         </div>
       )}
     </>

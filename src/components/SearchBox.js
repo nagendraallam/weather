@@ -4,7 +4,7 @@ export default function SearchBox(props) {
   const [editCity, setEditCity] = useState("");
 
   return (
-    <div className="absolute ml-[30vw] border-2 drop-shadow-xl flex flex-col bg-cyan-200 p-20">
+    <div className="fixed top-[50%] left-[50%] -translate-x-2/4 -translate-y-2/4 border-2 drop-shadow-xl flex flex-col bg-cyan-200 p-20">
       <h3 className="mb-2">Enter a place below</h3>
       <input
         className="border-2 border-cyan-500 w-[20vw] p-3 mb-2"
